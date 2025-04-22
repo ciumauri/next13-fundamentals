@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Search, ShoppingBag } from "lucide-react";
 import Image from "next/image";
