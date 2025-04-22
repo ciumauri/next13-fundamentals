@@ -1,11 +1,5 @@
-import data from './data.json';
+import data from "./data.json";
 
-export async function GET(request: Request) {
- return new Response(JSON.stringify(data.products), {
-   status: 200,
-   headers: {
-     'Content-Type': 'application/json',
-     'Cache-Control': 'no-store',
-   },
- });
+export async function GET() {
+  return Response.json(data.products);
 }

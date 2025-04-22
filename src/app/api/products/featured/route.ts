@@ -1,13 +1,9 @@
-import data from '../data.json';
+import data from "../data.json";
 
-export async function GET(request: Request) {
+export async function GET() {
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+
   const featuredProducts = data.products.filter((product) => product.featured);
 
-  return new Response(JSON.stringify(featuredProducts), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store',
-    },
-  });
+  return Response.json(featuredProducts);
 }
