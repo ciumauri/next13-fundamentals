@@ -23,7 +23,9 @@ async function getProduct(slug: string): Promise<Product> {
 
 export async function generateMetadata({
   params,
-}: ProductPageProps): Promise<Metadata> {
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
   const product = await getProduct(params.slug);
 
   return {
