@@ -2,6 +2,7 @@ import { api } from "@/data/api";
 import { Product } from "@/data/types/product";
 import { Metadata } from "next";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 
 interface ProductPageProps {
   params: {
@@ -16,9 +17,11 @@ async function getProduct(slug: string): Promise<Product> {
     },
   });
 
-  const product = await response.json();
+  if (!response.ok) {
+    throw new Error("Failed to fetch product");
+  }
 
-  return product;
+  return await response.json();
 }
 
 export async function generateMetadata({
@@ -26,100 +29,114 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const product = await getProduct(params.slug);
+  try {
+    // Agora precisamos usar await com params
+    const { slug } = await params;
+    const product = await getProduct(slug);
 
-  return {
-    title: product.title,
-  };
+    return {
+      title: product.title,
+      description: product.description,
+      openGraph: {
+        images: [product.image],
+      },
+    };
+  } catch {
+    return {
+      title: "Produto não encontrado",
+      description: "Descrição não disponível",
+    };
+  }
 }
 
 export async function generateStaticParams() {
   const response = await api("/products/featured");
 
+  if (!response.ok) {
+    return [];
+  }
+
   const products: Product[] = await response.json();
 
-  return products.map((product) => {
-    return { slug: product.slug };
-  });
+  return products.map((product) => ({
+    slug: product.slug,
+  }));
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const product = await getProduct(params.slug);
+  try {
+    // Acesso assíncrono aos params
+    const { slug } = await params;
+    const product = await getProduct(slug);
 
-  return (
-    <div className="relative grid max-h-[860px] grid-cols-3">
-      <div className="col-span-2 rounded-lg overflow-hidden flex justify-center items-end">
-        <Image
-          src={product.image}
-          alt="Hero"
-          width={920}
-          height={920}
-          quality={100}
-        />
-      </div>
-      <div className="flex flex-col justify-center px-12">
-        <h1 className="text-3xl font-bold leading-relaxed">{product.title}</h1>
+    return (
+      <div className="relative grid max-h-[860px] grid-cols-3">
+        <div className="col-span-2 rounded-lg overflow-hidden flex justify-center items-end">
+          <Image
+            src={product.image}
+            alt={product.title}
+            width={920}
+            height={920}
+            quality={100}
+            priority
+          />
+        </div>
 
-        <p className="mt-2 leading-relaxed text-zinc-400">
-          {product.description}
-        </p>
+        <div className="flex flex-col justify-center px-12">
+          <h1 className="text-3xl font-bold leading-relaxed">
+            {product.title}
+          </h1>
 
-        <div className="mt-8 flex items-center gap-3">
-          <span className="inline-block rounded-full bg-violet-500 px-5 py-2.5 font-semibold">
-            {product.price.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
-          </span>
+          <p className="mt-2 leading-relaxed text-zinc-400">
+            {product.description}
+          </p>
 
-          <span className="text-sm text-zinc-400">
-            ou em até 12x de{" "}
-            <span className="text-emerald-600 font-semibold">
-              {" "}
-              {(product.price / 12).toLocaleString("pt-BR", {
+          <div className="mt-8 flex items-center gap-3">
+            <span className="inline-block rounded-full bg-violet-500 px-5 py-2.5 font-semibold">
+              {product.price.toLocaleString("pt-BR", {
                 style: "currency",
                 currency: "BRL",
               })}
-            </span>{" "}
-            sem juros
-          </span>
-        </div>
+            </span>
 
-        <div className="mt-8 space-y-4">
-          <span className="block font-semibold">Tamanhos</span>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="flex h-9 w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold cursor-pointer"
-            >
-              P
-            </button>
-            <button
-              type="button"
-              className="flex h-9 w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold cursor-pointer"
-            >
-              M
-            </button>
-            <button
-              type="button"
-              className="flex h-9 w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold cursor-pointer"
-            >
-              G
-            </button>
-            <button
-              type="button"
-              className="flex h-9 w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold cursor-pointer"
-            >
-              GG
-            </button>
+            <span className="text-sm text-zinc-400">
+              ou em até 12x de{" "}
+              <span className="text-emerald-600 font-semibold">
+                {(product.price / 12).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                })}
+              </span>{" "}
+              sem juros
+            </span>
           </div>
-        </div>
 
-        <button className="mt-8 flex h-12 items-center justify-center rounded-full bg-emerald-600 font-semibold text-white cursor-pointer">
-          Adicionar ao carrinho
-        </button>
+          <div className="mt-8 space-y-4">
+            <span className="block font-semibold">Tamanhos</span>
+
+            <div className="flex gap-2">
+              {["P", "M", "G", "GG"].map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  className="flex h-9 w-14 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800 text-sm font-semibold hover:bg-zinc-700 transition-colors"
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="mt-8 flex h-12 items-center justify-center rounded-full bg-emerald-600 font-semibold text-white hover:bg-emerald-500 transition-colors"
+          >
+            Adicionar ao carrinho
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    notFound();
+  }
 }
