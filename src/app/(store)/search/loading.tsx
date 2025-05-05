@@ -1,11 +1,23 @@
-import { Skeleton } from "@/components/skeleton";
+import { Suspense } from 'react'
 
-export default function Loading() {
+import { Skeleton } from '@/components/skeleton'
+import { CurrentSearch } from './current-search'
+
+export default function SearchLoading() {
   return (
-    <div className="grid h-full grid-cols-9 grid-rows-6 gap-6">
-      <Skeleton className="col-span-6 row-span-6 h-[856px]" />
-      <Skeleton className="col-span-3 row-span-3" />
-      <Skeleton className="col-span-3 row-span-3" />
+    <div className="flex flex-col gap-4">
+      <Suspense fallback={null}>
+        <CurrentSearch />
+      </Suspense>
+
+      <div className="grid grid-cols-3 gap-6">
+        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-[400px]" />
+      </div>
     </div>
-  );
+  )
 }
